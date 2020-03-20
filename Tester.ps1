@@ -3,8 +3,8 @@ function Invoke-Test {
     [OutputType('Tester.TestResult')]
     [CmdletBinding(ConfirmImpact='Low', SupportsShouldProcess, DefaultParameterSetName='ByPath')]
     Param(
-        [Parameter(ParameterSetName='ByPath', Mandatory)]
-        [string] $Path,
+        [Parameter(ParameterSetName='ByPath')]
+        [string] $Path = '.',
 
         [Parameter(ParameterSetName='ByPath')]
         [string] $Filter = '*.Tester.ps1',
