@@ -283,7 +283,7 @@ function New-TestResult {
                 Name        = $Test.Name
                 Result      = $Result
                 Duration    = $Duration
-                Output      = $Output | Out-String
+                Output      = $Output    | Out-String
                 Exception   = $Exception | Out-String
             }
 

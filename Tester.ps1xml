@@ -121,17 +121,16 @@
                                     switch($_.Result) {
                                         'Passed'  { 
                                             $color = '97' # Bright Foreground White
-                                            $e = [char]27
                                         }
                                         'Skipped'  { 
                                             $color = '37' # Foreground White
-                                            $e = [char]27
                                         }
                                         'Failed'  {
                                             $color = '91' # Bright Foreground Red
-                                            $e = [char]27
                                         }
                                     }
+
+                                    $e = [char]27
                                     "$e[${color}m$($text)${e}[0m"
                                 </ScriptBlock>
                             </TableColumnItem>
@@ -160,17 +159,16 @@
                                     switch($_.Result) {
                                         'Passed'  { 
                                             $color = '97' # Bright Foreground White
-                                            $e = [char]27
                                         }
                                         'Skipped'  { 
                                             $color = '37' # Foreground White
-                                            $e = [char]27
                                         }
                                         'Failed'  {
                                             $color = '91' # Bright Foreground Red
-                                            $e = [char]27
                                         }
                                     }
+
+                                    $e = [char]27
                                     "$e[${color}m$($text)${e}[0m"
                                 </ScriptBlock>
                             </TableColumnItem>
@@ -182,17 +180,16 @@
                                     switch($_.Result) {
                                         'Passed'  { 
                                             $color = '97' # Bright Foreground White
-                                            $e = [char]27
                                         }
                                         'Skipped'  { 
                                             $color = '37' # Foreground White
-                                            $e = [char]27
                                         }
                                         'Failed'  {
                                             $color = '91' # Bright Foreground Red
-                                            $e = [char]27
                                         }
                                     }
+
+                                    $e = [char]27
                                     "$e[${color}m$($text)${e}[0m"
                                 </ScriptBlock>
                             </TableColumnItem>
@@ -209,17 +206,16 @@
                                     switch($_.Result) {
                                         'Passed'  { 
                                             $color = '97' # Bright Foreground White
-                                            $e = [char]27
                                         }
                                         'Skipped'  { 
                                             $color = '37' # Foreground White
-                                            $e = [char]27
                                         }
                                         'Failed'  {
                                             $color = '91' # Bright Foreground Red
-                                            $e = [char]27
                                         }
                                     }
+
+                                    $e = [char]27
                                     "$e[${color}m$($text)${e}[0m"
                                 </ScriptBlock>
                             </TableColumnItem>
