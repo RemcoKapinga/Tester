@@ -1,6 +1,4 @@
 
-. '.\Tester.ps1'
-
 Test 'Without Scope' -Tag 'NoScope' {
 }
 
@@ -10,9 +8,9 @@ Scope 'Outer' -Tag 'Outer' {
         Write-Output 'Outer'
     }
 
-    Scope 'Inner' -Tag 'Inner'  {
+    Scope 'Inner' -Tag 'Inner' {
 
-        ForEach($i in (0..2)) {
+        ForEach ($i in (0..2)) {
 
             Test "Good - $i" -Tag 'Good' {
                 Write-Output "Good output $i"
@@ -35,18 +33,43 @@ Scope 'Outer' -Tag 'Outer' {
         }
     }
 
-    Scope 'Timing' -Tag 'Timing' {
+    Scope "Timing" -Tag 'Timing' -Parallel {
 
-        Test '1ms' {
-            Start-Sleep -MilliSeconds 1
+        0 .. 5 | % { 
+
+            Test "10 ms $_" {
+                Start-Sleep -Milliseconds 10
+            }
         }
+    }
 
-        Test '200ms' {
-            Start-Sleep -MilliSeconds 200
-        }
+    0 .. 5 | % { 
 
-        Test '1s' {
-            Start-Sleep -Seconds 1
+        Scope "Timing $_" -Tag 'Timing' -Parallel -Skip {
+
+            Test "10 ms" {
+                Start-Sleep -Milliseconds 10
+            }
+
+            Test "20 ms" {
+                Start-Sleep -Milliseconds 20
+            }
+
+            Test "50 ms" {
+                Start-Sleep -Milliseconds 50
+            }
+
+            Test "100 ms" {
+                Start-Sleep -Milliseconds 100
+            }
+
+            Test "200 ms" {
+                Start-Sleep -Milliseconds 200
+            }
+
+            Test "500 ms" {
+                Start-Sleep -Milliseconds 500
+            }
         }
     }
 }

@@ -94,7 +94,7 @@
                 <TableHeaders>
                     <TableColumnHeader>
                         <Label>Result</Label>
-                        <Width>14</Width>
+                        <Width>10</Width>
                         <Alignment>Right</Alignment>
                     </TableColumnHeader>
                     <TableColumnHeader>
@@ -108,6 +108,7 @@
                     </TableColumnHeader>
                     <TableColumnHeader>
                         <Label>Output (Summary)</Label>
+                        <Width>100</Width>
                     </TableColumnHeader>
                 </TableHeaders>
                 <TableRowEntries>
@@ -116,12 +117,22 @@
                             <TableColumnItem>
                                 <!-- Result -->
                                 <ScriptBlock>
+                                    $text = $_.Result
+
                                     switch($_.Result) {
-                                        'Passed'    {  'Passed [v]' }
-                                        'Skipped'   { 'Skipped [ ]' }
-                                        'Failed'    { 'Failed [x]'  }
-                                        default     { $_ }
+                                        'Passed'  { 
+                                            $color = '97' # Bright Foreground White
+                                        }
+                                        'Skipped'  { 
+                                            $color = '37' # Foreground White
+                                        }
+                                        'Failed'  {
+                                            $color = '91' # Bright Foreground Red
+                                        }
                                     }
+
+                                    $e = [char]27
+                                    "$e[${color}m$($text)${e}[0m"
                                 </ScriptBlock>
                             </TableColumnItem>
                             <TableColumnItem>
@@ -129,7 +140,7 @@
                                 <ScriptBlock>
                                     $duration = $_.Duration
 
-                                    if (($Null -NE $duration) -and ($duration.Ticks -GT 0)) {
+                                    $text = if (($Null -NE $duration) -and ($duration.Ticks -GT 0)) {
 
                                         if ($duration.TotalSeconds -GE 1) {
                                             $time = [math]::Round($duration.Seconds, 2)
@@ -145,23 +156,68 @@
                                     else {
                                         ' - '
                                     }
+
+                                    switch($_.Result) {
+                                        'Passed'  { 
+                                            $color = '97' # Bright Foreground White
+                                        }
+                                        'Skipped'  { 
+                                            $color = '37' # Foreground White
+                                        }
+                                        'Failed'  {
+                                            $color = '91' # Bright Foreground Red
+                                        }
+                                    }
+
+                                    $e = [char]27
+                                    "$e[${color}m$($text)${e}[0m"
                                 </ScriptBlock>
                             </TableColumnItem>
                             <TableColumnItem>
                                 <!-- Name -->
                                 <ScriptBlock>
-                                    $_.Name
+                                    $text = $_.Name
+
+                                    switch($_.Result) {
+                                        'Passed'  { 
+                                            $color = '97' # Bright Foreground White
+                                        }
+                                        'Skipped'  { 
+                                            $color = '37' # Foreground White
+                                        }
+                                        'Failed'  {
+                                            $color = '91' # Bright Foreground Red
+                                        }
+                                    }
+
+                                    $e = [char]27
+                                    "$e[${color}m$($text)${e}[0m"
                                 </ScriptBlock>
                             </TableColumnItem>
                             <TableColumnItem>
                                 <!-- Outut -->
                                 <ScriptBlock>
-                                    [string]::Format(
+                                    $text = [string]::Format(
                                         '{0}{1}{2}', 
                                         $_.Output, 
                                         [System.Environment]::NewLine,
                                         $_.Exception
                                     ).Trim()
+
+                                    switch($_.Result) {
+                                        'Passed'  { 
+                                            $color = '97' # Bright Foreground White
+                                        }
+                                        'Skipped'  { 
+                                            $color = '37' # Foreground White
+                                        }
+                                        'Failed'  {
+                                            $color = '91' # Bright Foreground Red
+                                        }
+                                    }
+
+                                    $e = [char]27
+                                    "$e[${color}m$($text)${e}[0m"
                                 </ScriptBlock>
                             </TableColumnItem>
                         </TableColumnItems>
