@@ -71,7 +71,7 @@ function Invoke-Test {
 
                     Try {
                         if (-not $skipScope) {
-                            if ($SCope.Before) {
+                            if ($null -NE $SCope.Before) {
                                 # $Scope.Before
                             }
                         }
@@ -81,11 +81,10 @@ function Invoke-Test {
 
                         # Recurse Scopes
                         $Scope.Scopes | Invoke-Test -Skip:$skipScope -SkipTag:$SkipTag # <--
-
                     }
                     Finally {
                         if (-not $skipScope) {
-                            if ($Scope.After) {
+                            if ($null -NE $Scope.After) {
                                 # $Scope.After
                             }
                         }
@@ -168,7 +167,6 @@ function New-Scope {
 
                 if ($PSCmdlet.ShouldProcess($Path)) {
                     $Path = Resolve-Path $Path
-                    # $script:currentScopeName = $Path
 
                     New-Scope -Name $Path -Skip:$Skip -Tag:$Tag -Script (Get-command $Path | Select-Object -ExpandProperty ScriptBlock ) # <--
                  }

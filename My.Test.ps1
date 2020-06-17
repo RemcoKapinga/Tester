@@ -1,6 +1,4 @@
 
-. '.\Tester.ps1'
-
 Test 'Without Scope' -Tag 'NoScope' {
 }
 
@@ -32,21 +30,6 @@ Scope 'Outer' -Tag 'Outer' {
 
         Test 'SkippedTest' {
             Throw 'Test should be Skipped'
-        }
-    }
-
-    Scope 'Timing' -Tag 'Timing' {
-
-        Test '1ms' {
-            Start-Sleep -MilliSeconds 1
-        }
-
-        Test '200ms' {
-            Start-Sleep -MilliSeconds 200
-        }
-
-        Test '1s' {
-            Start-Sleep -Seconds 1
         }
     }
 }
