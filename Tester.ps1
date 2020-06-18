@@ -1,3 +1,8 @@
+[CmdletBinding()]
+Param(
+    [Parameter()]
+    [switch] $UpdateFormatData
+)
 
 function Invoke-Test {
     [OutputType('Tester.TestResult')]
@@ -345,4 +350,6 @@ New-Alias -Name 'Before'    -Value 'New-Before'         -Force
 New-Alias -Name 'After'     -Value 'New-After'          -Force
 New-Alias -Name 'Test'      -Value 'New-Test'           -Force
 
-Update-FormatData -AppendPath .\Tester.ps1xml
+if ($UpdateFormatData) {
+    Update-FormatData -AppendPath .\Tester.ps1xml
+}
