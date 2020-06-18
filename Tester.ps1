@@ -69,26 +69,11 @@ function Invoke-Test {
                         }
                     }
 
-                    Try {
-                        if (-not $skipScope) {
-                            if ($null -NE $SCope.Before) {
-                                # $Scope.Before
-                            }
-                        }
+                    # Recurse Tests
+                    $Scope.Tests  | Invoke-Test -Skip:$skipScope -SkipTag:$SkipTag # <--
 
-                        # Recurse Tests
-                        $Scope.Tests  | Invoke-Test -Skip:$skipScope -SkipTag:$SkipTag # <--
-
-                        # Recurse Scopes
-                        $Scope.Scopes | Invoke-Test -Skip:$skipScope -SkipTag:$SkipTag # <--
-                    }
-                    Finally {
-                        if (-not $skipScope) {
-                            if ($null -NE $Scope.After) {
-                                # $Scope.After
-                            }
-                        }
-                    }
+                    # Recurse Scopes
+                    $Scope.Scopes | Invoke-Test -Skip:$skipScope -SkipTag:$SkipTag # <--
                 }
             }
 
@@ -185,8 +170,6 @@ function New-Scope {
 
                     $output = @( Invoke-Command -ScriptBlock $SCript ) 2>&1
 
-                    # $before = $output | Where-Object { 'Tester.Before' -IN $_.PsObject.TypeNames } | Select -First 1
-                    # $after  = $output | Where-Object { 'Tester.After'  -IN $_.PsObject.TypeNames } | Select -First 1
                     $scopes = $output | Where-Object { 'Tester.Scope'  -IN $_.PsObject.TypeNames }
                     $tests  = $output | Where-Object { 'Tester.Test'   -IN $_.PsObject.TypeNames }
 
@@ -197,8 +180,6 @@ function New-Scope {
                         Name        = $Name
                         Skip        = $Skip
                         Tag         = $Tag
-                        # Before      = $before
-                        # After       = $after
                         Scopes      = $scopes
                         Tests       = $tests
                     }
