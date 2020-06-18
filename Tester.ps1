@@ -69,11 +69,27 @@ function Invoke-Test {
                         }
                     }
 
-                    # Recurse Tests
-                    $Scope.Tests  | Invoke-Test -Skip:$skipScope -SkipTag:$SkipTag # <--
+                    Try {
+                        if (-not $skipScope) {
+                            if ($null -ne $Scope.Before) {
+                                $output = @( Invoke-Command -ScriptBlock $Scope.Before.Script ) 2>&1
+                            }
+                        }
 
-                    # Recurse Scopes
-                    $Scope.Scopes | Invoke-Test -Skip:$skipScope -SkipTag:$SkipTag # <--
+                        # Recurse Tests
+                        $Scope.Tests  | Invoke-Test -Skip:$skipScope -SkipTag:$SkipTag # <--
+
+                        # Recurse Scopes
+                        $Scope.Scopes | Invoke-Test -Skip:$skipScope -SkipTag:$SkipTag # <--
+                    }
+                    Finally {
+                        if (-not $skipScope) {
+                            if ($null -ne $Scope.After) {
+                                $output = @( Invoke-Command -ScriptBlock $Scope.After.Script ) 2>&1
+                            }
+                        }
+
+                    }
                 }
             }
 
@@ -98,7 +114,7 @@ function Invoke-Test {
                         $stopWatch.Restart()
                         Try {
                             Try {
-                                $output = @( Invoke-Command -ScriptBlock $Test.Test ) 2>&1
+                                $output = @( Invoke-Command -ScriptBlock $Test.Script ) 2>&1
                             }
                             Finally {
                                 $stopWatch.Stop()
@@ -165,21 +181,26 @@ function New-Scope {
                         $script:currentScopeName = $Name
                     }
                     elseif ($script:currentScopeName -NE $Name) {
-                        $script:currentScopeName = $script:currentScopeName + ' | ' + $Name
+                        $script:currentScopeName = $script:currentScopeName + ' > ' + $Name
                     }
 
                     $output = @( Invoke-Command -ScriptBlock $SCript ) 2>&1
 
+                    $before = $output | Where-Object { 'Tester.Before' -IN $_.PsObject.TypeNames } | Select -First 1
+                    $after  = $output | Where-Object { 'Tester.After'  -IN $_.PsObject.TypeNames } | Select -First 1
                     $scopes = $output | Where-Object { 'Tester.Scope'  -IN $_.PsObject.TypeNames }
                     $tests  = $output | Where-Object { 'Tester.Test'   -IN $_.PsObject.TypeNames }
 
-                    [PSCustomObject] $result = [PSCustomObject] @{
+                    [PSCustomObject] $result = [PSCustomObject] [Ordered] @{
                         PSTypeName  = 'Tester.Scope'
                         Path        = $Script.File
                         Scope       = $script:currentScopeName
                         Name        = $Name
+                        Script      = $Script
                         Skip        = $Skip
                         Tag         = $Tag
+                        Before      = $before
+                        After       = $after
                         Scopes      = $scopes
                         Tests       = $tests
                     }
@@ -216,14 +237,62 @@ function New-Test {
         Write-Verbose "$($MyInvocation.MyCommand)"
 
         if ($PSCmdlet.ShouldProcess($Name)) {
-            [PSCustomObject] $result = [PSCustomObject] @{
+            [PSCustomObject] $result = [PSCustomObject] [Ordered] @{
                 PSTypeName  = 'Tester.Test'
                 Path        = $Script.File
                 Scope       = $script:currentScopeName
                 Name        = $Name
+                Script      = $Script
                 Skip        = $Skip
-                Test        = $Script
                 Tag         = $Tag
+            }
+
+            $result # <--
+        }
+    }
+}
+
+function New-Before {
+    [OutputType('Tester.Before')]
+    [CmdletBinding(ConfirmImpact='Low', SupportsShouldProcess)]
+    Param(
+        [Parameter(Mandatory, Position=0)]
+        [ScriptBlock] $Script
+    )
+
+    Process {
+        Write-Verbose "$($MyInvocation.MyCommand)"
+
+        if ($PSCmdlet.ShouldProcess($Name)) {
+            [PSCustomObject] $result = [PSCustomObject] [Ordered] @{
+                PSTypeName  = 'Tester.Before'
+                Path        = $Script.File
+                Scope       = $script:currentScopeName
+                Script      = $Script
+            }
+
+            $result # <--
+        }
+    }
+}
+
+function New-After {
+    [OutputType('Tester.After')]
+    [CmdletBinding(ConfirmImpact='Low', SupportsShouldProcess)]
+    Param(
+        [Parameter(Mandatory, Position=0)]
+        [ScriptBlock] $Script
+    )
+
+    Process {
+        Write-Verbose "$($MyInvocation.MyCommand)"
+
+        if ($PSCmdlet.ShouldProcess($Name)) {
+            [PSCustomObject] $result = [PSCustomObject] [Ordered] @{
+                PSTypeName  = 'Tester.After'
+                Path        = $Script.File
+                Scope       = $script:currentScopeName
+                Script      = $Script
             }
 
             $result # <--
@@ -255,7 +324,7 @@ function New-TestResult {
         Write-Verbose "$($MyInvocation.MyCommand)"
 
         if ($PSCmdlet.ShouldProcess($Name)) {
-            [PSCustomObject] $result = [PSCustomObject] @{
+            [PSCustomObject] $result = [PSCustomObject] [Ordered] @{
                 PSTypeName  = 'Tester.TestResult'
                 Path        = $Test.Path
                 Scope       = $Test.Scope
@@ -272,6 +341,8 @@ function New-TestResult {
 }
 
 New-Alias -Name 'Scope'     -Value 'New-Scope'          -Force
+New-Alias -Name 'Before'    -Value 'New-Before'         -Force
+New-Alias -Name 'After'     -Value 'New-After'          -Force
 New-Alias -Name 'Test'      -Value 'New-Test'           -Force
 
 Update-FormatData -AppendPath .\Tester.ps1xml

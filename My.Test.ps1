@@ -33,3 +33,22 @@ Scope 'Outer' -Tag 'Outer' {
         }
     }
 }
+
+Scope 'ScopeWithSetupTeardown' {
+
+    Before {
+        $script:x = 12;
+    }
+
+    Scope 'Tests' {
+        Test 'Test x' {
+            if ($script:x -ne 12) {
+                Throw "x should be 12 but is $($script:x)"
+            }
+        }
+    }
+
+    After {
+        $script:x = $null;
+    }
+}
