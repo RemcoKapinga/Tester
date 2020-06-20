@@ -149,9 +149,7 @@
                             </TableColumnItem>
                             <TableColumnItem>
                                 <!-- Name -->
-                                <ScriptBlock>
-                                    $_.Name
-                                </ScriptBlock>
+                                <PropertyName>Name</PropertyName>
                             </TableColumnItem>
                             <TableColumnItem>
                                 <!-- Outut -->

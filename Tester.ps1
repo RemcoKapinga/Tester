@@ -24,7 +24,10 @@ function Invoke-Test {
         [switch] $Recurse,
 
         [Parameter(ParameterSetName='ByPath')]
-        [int] $Depth,
+        [uint] $Depth = [uint]::MaxValue,
+
+        [Parameter(ParameterSetName='ByFile', Mandatory, ValueFromPipeline)]
+        [string] $File,
 
         [Parameter(ParameterSetName='ByScope', Mandatory, ValueFromPipeline, Position=0)]
         [PSTypeName('Tester.Scope')] $Scope,
@@ -40,31 +43,34 @@ function Invoke-Test {
         [string[]] $SkipTag
     )
 
-    Begin {
-        $stopWatch = New-Object -TypeName 'System.Diagnostics.Stopwatch'
-    }
-
     Process {
-        Write-Verbose "$($MyInvocation.MyCommand) ($($PSCmdlet.ParameterSetName))"
+        Write-Debug -Message "$($MyInvocation.MyCommand) ($($PSCmdlet.ParameterSetName))"
 
         switch($PSCmdlet.ParameterSetName) {
 
             'ByPath' {
+                $Path = Resolve-Path -Path $Path
+                Write-Debug -Message "-Path '$Path'"
 
-                if ($PSCmdlet.ShouldProcess("Script '$Path'")) {
-
+                if ($PSCmdlet.ShouldProcess($Path, 'Loading and Invoking Unit Test(s) from file(s)')) {
                     $files = Get-ChildItem -File -Path:$Path -Filter:$Filter -Include:$Include -Exclude:$Exclude -Recurse:$Recurse -Depth:$Depth
+                    $files | Invoke-Test -SkipTag:$SkipTag
+                }
+            }
 
-                    Foreach($file in $files) {
-                        $fileScope = New-Scope -Path $file.FullName
-                        $fileScope | Invoke-Test -SkipTag:$SkipTag # <--
-                    }
-                 }
+            'ByFile' {
+                $File = Resolve-Path $File
+                Write-Debug -Message "-File '$File'"
+
+                if ($PSCmdlet.ShouldProcess($File, 'Loading and Invoking Unit Test(s) from file')) {
+                    $fileScope = New-Scope -File $File -Confirm:$false
+                    $fileScope | Invoke-Test -SkipTag:$SkipTag -Confirm:$false
+                }
             }
 
             'ByScope' {
 
-                if ($PSCmdlet.ShouldProcess("Scope '$($Scope.Name)'")) {
+                if ($PSCmdlet.ShouldProcess($Scope.Name, 'Invoke Unit Test(s)')) {
 
                     $skipScope = $Skip -or $Scope.Skip
 
@@ -82,10 +88,10 @@ function Invoke-Test {
                         }
 
                         # Recurse Tests
-                        $Scope.Tests  | Invoke-Test -Skip:$skipScope -SkipTag:$SkipTag # <--
+                        $Scope.Tests  | Invoke-Test -Skip:$skipScope -SkipTag:$SkipTag -Confirm:$false
 
                         # Recurse Scopes
-                        $Scope.Scopes | Invoke-Test -Skip:$skipScope -SkipTag:$SkipTag # <--
+                        $Scope.Scopes | Invoke-Test -Skip:$skipScope -SkipTag:$SkipTag -Confirm:$false
                     }
                     Finally {
                         if (-not $skipScope) {
@@ -100,7 +106,7 @@ function Invoke-Test {
 
             'ByTest' {
 
-                if ($PSCmdlet.ShouldProcess("Test '$($Test.Name)'")) {
+                if ($PSCmdlet.ShouldProcess($Test.Name, 'Invoke Unit Test')) {
 
                     $skipTest = $Skip -or $Test.Skip
 
@@ -116,7 +122,8 @@ function Invoke-Test {
                     else {
                         [string[]] $output = @()
 
-                        $stopWatch.Restart()
+                        $stopWatch = New-Object -TypeName 'System.Diagnostics.Stopwatch'
+                        $stopWatch.Start()
                         Try {
                             Try {
                                 $output = @( Invoke-Command -ScriptBlock $Test.Script ) 2>&1
@@ -125,10 +132,10 @@ function Invoke-Test {
                                 $stopWatch.Stop()
                             }
 
-                            New-TestResult -Test $Test -Result 'Passed' -Duration $stopWatch.Elapsed -Output $output # <--
+                            New-TestResult -Test $Test -Result 'Passed' -Duration $stopWatch.Elapsed -Output $output
                         }
                         Catch {
-                            New-TestResult -Test $Test -Result 'Failed' -Duration $stopWatch.Elapsed -Output $output -Exception $_.Exception # <--
+                            New-TestResult -Test $Test -Result 'Failed' -Duration $stopWatch.Elapsed -Output $output -Exception $_.Exception
                         }
                     }
                 }
@@ -141,8 +148,8 @@ function New-Scope {
     [OutputType('Tester.Scope')]
     [CmdletBinding(ConfirmImpact='Low', SupportsShouldProcess, DefaultParameterSetName='ByCode')]
     Param(
-        [Parameter(Mandatory, ParameterSetName='ByPath')]
-        [string] $Path,
+        [Parameter(ParameterSetName='ByFile', Mandatory, ValueFromPipeline)]
+        [string] $File,
 
         [Parameter(Mandatory, ParameterSetName='ByCode', Position=0)]
         [string] $Name,
@@ -165,16 +172,15 @@ function New-Scope {
     }
 
     Process {
-        Write-Verbose "$($MyInvocation.MyCommand) ($($PSCmdlet.ParameterSetName))"
+        Write-Debug -Message "$($MyInvocation.MyCommand) ($($PSCmdlet.ParameterSetName))"
 
         switch($PSCmdlet.ParameterSetName) {
 
-            'ByPath' {
+            'ByFile' {
+                $File = Resolve-Path -Path $File
 
-                if ($PSCmdlet.ShouldProcess($Path)) {
-                    $Path = Resolve-Path $Path
-
-                    New-Scope -Name $Path -Skip:$Skip -Tag:$Tag -Script (Get-command $Path | Select-Object -ExpandProperty ScriptBlock ) # <--
+                if ($PSCmdlet.ShouldProcess($File, 'Load Unit Test(s)')) {
+                    New-Scope -Name $File -Skip:$Skip -Tag:$Tag -Script (Get-Command $File | Select-Object -ExpandProperty ScriptBlock )
                  }
             }
 
@@ -201,7 +207,7 @@ function New-Scope {
                         Path        = $Script.File
                         Scope       = $script:currentScopeName
                         Name        = $Name
-                        Script      = $Script
+                        # Script      = $Script
                         Skip        = $Skip
                         Tag         = $Tag
                         Before      = $before
@@ -210,7 +216,7 @@ function New-Scope {
                         Tests       = $tests
                     }
 
-                    $result # <--
+                    $result
                 }
             }
         }
@@ -223,7 +229,7 @@ function New-Scope {
 
 function New-Test {
     [OutputType('Tester.Test')]
-    [CmdletBinding(ConfirmImpact='Low', SupportsShouldProcess)]
+    [CmdletBinding(ConfirmImpact='None', SupportsShouldProcess)]
     Param(
         [Parameter(Mandatory, Position=0)]
         [string] $Name,
@@ -239,7 +245,7 @@ function New-Test {
     )
 
     Process {
-        Write-Verbose "$($MyInvocation.MyCommand)"
+        Write-Debug -Message "$($MyInvocation.MyCommand)"
 
         if ($PSCmdlet.ShouldProcess($Name)) {
             [PSCustomObject] $result = [PSCustomObject] [Ordered] @{
@@ -252,21 +258,21 @@ function New-Test {
                 Tag         = $Tag
             }
 
-            $result # <--
+            $result
         }
     }
 }
 
 function New-Before {
     [OutputType('Tester.Before')]
-    [CmdletBinding(ConfirmImpact='Low', SupportsShouldProcess)]
+    [CmdletBinding(ConfirmImpact='None', SupportsShouldProcess)]
     Param(
         [Parameter(Mandatory, Position=0)]
         [ScriptBlock] $Script
     )
 
     Process {
-        Write-Verbose "$($MyInvocation.MyCommand)"
+        Write-Debug -Message "$($MyInvocation.MyCommand)"
 
         if ($PSCmdlet.ShouldProcess($Name)) {
             [PSCustomObject] $result = [PSCustomObject] [Ordered] @{
@@ -276,21 +282,21 @@ function New-Before {
                 Script      = $Script
             }
 
-            $result # <--
+            $result
         }
     }
 }
 
 function New-After {
     [OutputType('Tester.After')]
-    [CmdletBinding(ConfirmImpact='Low', SupportsShouldProcess)]
+    [CmdletBinding(ConfirmImpact='None', SupportsShouldProcess)]
     Param(
         [Parameter(Mandatory, Position=0)]
         [ScriptBlock] $Script
     )
 
     Process {
-        Write-Verbose "$($MyInvocation.MyCommand)"
+        Write-Debug -Message "$($MyInvocation.MyCommand)"
 
         if ($PSCmdlet.ShouldProcess($Name)) {
             [PSCustomObject] $result = [PSCustomObject] [Ordered] @{
@@ -300,7 +306,7 @@ function New-After {
                 Script      = $Script
             }
 
-            $result # <--
+            $result
         }
     }
 }
@@ -326,7 +332,7 @@ function New-TestResult {
     )
 
     Process {
-        Write-Verbose "$($MyInvocation.MyCommand)"
+        Write-Debug -Message "$($MyInvocation.MyCommand)"
 
         if ($PSCmdlet.ShouldProcess($Name)) {
             [PSCustomObject] $result = [PSCustomObject] [Ordered] @{
@@ -340,7 +346,7 @@ function New-TestResult {
                 Exception   = $Exception | Out-String
             }
 
-            $result # <--
+            $result
         }
     }
 }
@@ -351,5 +357,6 @@ New-Alias -Name 'After'     -Value 'New-After'          -Force
 New-Alias -Name 'Test'      -Value 'New-Test'           -Force
 
 if ($UpdateFormatData) {
-    Update-FormatData -AppendPath .\Tester.ps1xml
+    Write-Debug "Updating FormatData with '$PsScriptRoot\Tester.ps1xml'"
+    Update-FormatData -AppendPath "$PsScriptRoot\Tester.ps1xml"
 }
