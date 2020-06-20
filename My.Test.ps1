@@ -8,7 +8,7 @@ Scope 'Outer' -Tag 'Outer' {
         Write-Output 'Outer'
     }
 
-    Scope 'Inner' -Tag 'Inner'  {
+    Scope 'Inner' -Tag 'Inner' {
 
         ForEach($i in (0..2)) {
 

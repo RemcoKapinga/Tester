@@ -87,10 +87,10 @@ function Invoke-Test {
                             }
                         }
 
-                        # Recurse Tests
-                        $Scope.Tests  | Invoke-Test -Skip:$skipScope -SkipTag:$SkipTag -Confirm:$false
+                        # Invoke Tests
+                        $Scope.Tests | Invoke-Test -Skip:$skipScope -SkipTag:$SkipTag -Confirm:$false
 
-                        # Recurse Scopes
+                        # Invoke Scopes
                         $Scope.Scopes | Invoke-Test -Skip:$skipScope -SkipTag:$SkipTag -Confirm:$false
                     }
                     Finally {
@@ -99,7 +99,6 @@ function Invoke-Test {
                                 $output = @( Invoke-Command -ScriptBlock $Scope.After.Script ) 2>&1
                             }
                         }
-
                     }
                 }
             }
@@ -117,7 +116,7 @@ function Invoke-Test {
                     }
 
                     if ($skipTest) {
-                        New-TestResult -Test $Test -Result 'Skipped' # <--
+                        New-TestResult -Test $Test -Result Skipped
                     }
                     else {
                         [string[]] $output = @()
@@ -132,10 +131,10 @@ function Invoke-Test {
                                 $stopWatch.Stop()
                             }
 
-                            New-TestResult -Test $Test -Result 'Passed' -Duration $stopWatch.Elapsed -Output $output
+                            New-TestResult -Test $Test -Result Passed -Duration $stopWatch.Elapsed -Output $output
                         }
                         Catch {
-                            New-TestResult -Test $Test -Result 'Failed' -Duration $stopWatch.Elapsed -Output $output -Exception $_.Exception
+                            New-TestResult -Test $Test -Result Failed -Duration $stopWatch.Elapsed -Output $output -Exception $_.Exception
                         }
                     }
                 }
@@ -207,7 +206,6 @@ function New-Scope {
                         Path        = $Script.File
                         Scope       = $script:currentScopeName
                         Name        = $Name
-                        # Script      = $Script
                         Skip        = $Skip
                         Tag         = $Tag
                         Before      = $before
@@ -311,6 +309,12 @@ function New-After {
     }
 }
 
+enum TestResult {
+    Skipped
+    Passed
+    Failed
+}
+
 function New-TestResult {
     [OutputType('Tester.TestResult')]
     [CmdletBinding(ConfirmImpact='None', SupportsShouldProcess)]
@@ -319,7 +323,7 @@ function New-TestResult {
         [PSTypeName('Tester.Test')] $Test,
 
         [Parameter(Mandatory)]
-        [string] $Result,
+        [TestResult] $Result,
 
         [Parameter()]
         [System.TimeSpan] $Duration,
