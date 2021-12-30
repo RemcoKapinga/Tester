@@ -27,13 +27,13 @@ Test results are native PowerShell objects. They are listed in the same manner a
 ```powershell
 > Invoke-Test
 
-   Scope: D:\09. Clean\Users\Remco\Tester\My.Test.ps1
+   Scope: D:\Code\Tester\My.Test.ps1
 
         Result Duration Test                           Output (Summary)
         ------ -------- ----                           ----------------
     Passed [v]    10 ms Without Scope
 
-   Scope: D:\09. Clean\Users\Remco\Tester\My.Test.ps1 | Outer
+   Scope: D:\Code\Tester\My.Test.ps1 | Outer
 
         Result Duration Test                           Output (Summary)
         ------ -------- ----                           ----------------
